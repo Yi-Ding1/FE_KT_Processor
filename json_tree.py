@@ -1,29 +1,48 @@
+'''
+This program will generate 3 json files.
+The input file must be "rawData.csv".
+Author: Yi Ding
+Version: 1.0
+'''
+
+
 import json
 import csv
+
+FNAME_STRUCT = "structure"
+FNAME_DISPLAY = "struct_year_level"
+FNAME_PROCESS = "detailed_tree"   
+FNAME = "rawData.csv"   # input file name
 
 DEPTH = 4
 IDX_CONTENT_TAG = -2
 IDX_YEAR_LEVEL = -1
 IDX_SUBTOPIC = 1
-FNAME_STRUCT = "structure"
-FNAME_DISPLAY = "struct_year_level"
-FNAME_PROCESS = "detailed_tree"
-FNAME = "rawData.csv"
+
 
 def construct_json(data, depth):
+    ''' construct a json file for the skeleton structure
+    to be imported into the figma workspace. Input
+    the rows of the csv file `data` and the level of depth for
+    which the tree will be constructed.
+    '''
 
     output = {}
     all_fields = data.fieldnames[:depth]
 
     for row in data:
+        # track the current position in the output dictionary
         track = output
 
+        # construct first two layers
         for field in all_fields[:-2]:
             next_node = row[field]
             if next_node not in track:
                 track[next_node] = {}
             track = track[next_node]
 
+        # construct the last two layers with the value
+        # being an array of last level nodes.
         next_node = row[all_fields[-2]]
         if next_node not in track:
             track[next_node] = []
@@ -35,26 +54,34 @@ def construct_json(data, depth):
     return output
 
 
-def construct_tree_json(data):
+def construct_with_yl(data):
+    ''' construct a json file that documents and visualizes
+    all content tags with the relevant year levels in
+    a hierachical structure. Input the rows of the csv file `data`
+    '''
 
     output = {}
     all_fields = data.fieldnames
     cur_idx = -1
     dis_idx = 0
+    # document all year levels for the first two level nodes
     year_level_dict = {"All levels": set()}
 
     for row in data:
+        # track the position in the output dictionary
         track = output
         next_tag = row[all_fields[IDX_CONTENT_TAG]]
         year_level = row[all_fields[IDX_YEAR_LEVEL]]
         subtopic = row[all_fields[IDX_SUBTOPIC]]
         entry = f"Y{year_level} {next_tag}"
 
+        # record year level for first two levels
         if subtopic not in year_level_dict:
             year_level_dict[subtopic] = set()
         year_level_dict[subtopic].add(f"Y{year_level}")
         year_level_dict['All levels'].add(f'Y{year_level}')
 
+        # construct first two levels of nodes
         for i in range(DEPTH-2):
             field = all_fields[i]
             next_node = row[field]
@@ -66,6 +93,7 @@ def construct_tree_json(data):
                     cur_idx = -1
             track = track[next_node]
         
+        # construct the third level, which also includes content tags
         field = all_fields[DEPTH-1]
         next_node = row[field]
         node_exists = False
@@ -83,6 +111,8 @@ def construct_tree_json(data):
         track = track[cur_idx]
         dis_idx = len(track)
         track[dis_idx] = entry
+
+        # construct last level of nodes with the relevant tag index
         track = track[next_node]
         field = all_fields[DEPTH]
         next_node = row[field]
@@ -93,6 +123,7 @@ def construct_tree_json(data):
             track[next_node] += f" {dis_idx}"
         dis_idx += 1
 
+    # report the overall year level distribution
     track = output
     for key, val in year_level_dict.items():
         sorted_val = sorted(list(val))
@@ -102,19 +133,27 @@ def construct_tree_json(data):
 
 
 def detailed_tree(data, depth):
-    
+    ''' construct a json file for the knowledge that
+    is easy to process for the Realus XiAn Team. Input
+    the rows of the csv file `data` and the level of depth
+    for which the tree will be constructed.
+    '''
+
     output = {}
     all_fields = data.fieldnames
 
     for row in data:
+        # track the position in the output dictionary
         track = output
 
+        # construct all the nodes
         for field in all_fields[:depth]:
             next_node = row[field]
             if next_node not in track:
                 track[next_node] = {}
             track = track[next_node]
 
+        # record the content tag with corresponding year level
         year_level = f"Y{row[all_fields[-1]]}"
         if year_level not in track:
             track[year_level] = []
@@ -122,11 +161,16 @@ def detailed_tree(data, depth):
 
     return output
 
+
 def write_json(data, fname):
+    ''' produce a json file output based on the given data
+    and a specified filename `fname`.
+    '''
     with open(f"{fname}.json", 'w', encoding='utf-8') as jsonf:
         jsonf.write(json.dumps(data, indent=4))
 
 
+# driver program
 with open(FNAME, 'r', encoding='utf-8') as csvf:
 
     csvReader = csv.DictReader(csvf)
@@ -136,7 +180,7 @@ with open(FNAME, 'r', encoding='utf-8') as csvf:
 with open(FNAME, 'r', encoding='utf-8') as csvf:
 
     csvReader = csv.DictReader(csvf)
-    struct_with_tag_json = construct_tree_json(csvReader)
+    struct_with_tag_json = construct_with_yl(csvReader)
     write_json(struct_with_tag_json, FNAME_DISPLAY)
 
 with open(FNAME, 'r', encoding='utf-8') as csvf:
@@ -145,5 +189,5 @@ with open(FNAME, 'r', encoding='utf-8') as csvf:
     detailed_tree_json = detailed_tree(csvReader, DEPTH)
     write_json(detailed_tree_json, FNAME_PROCESS)
 
-
+# all done!
 print("ta daa!!!")
