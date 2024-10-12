@@ -67,7 +67,8 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
 
 def convert_serial_to_string(fpath_link, linkages, all_nodes_down):
     """ This function produces a linkage dictionary structure based
-    on the given serial number file.
+    on the given serial number file. Return the list of nodes with
+    invalid names and list of nodes with invalid weightings.
     """
     invalid_nodes = []
     invalid_weight = []
@@ -76,13 +77,17 @@ def convert_serial_to_string(fpath_link, linkages, all_nodes_down):
 
         csvReader = csv.DictReader(csvf)
         for row in csvReader:
+
+            # store linkages that are valid
             from_node, to_node, weight = row.values()
             is_valid = [False, False]
 
+            # range check for weighting
             if float(weight) <= 0 or float(weight) > 1:
                 invalid_weight.append(tuple(row.values()))
                 continue
 
+            # existence check for node serial number
             for node, val in all_nodes_down.items():
                 if from_node == val['id']:
                     from_node_mod = (node[0], weight)
@@ -91,10 +96,12 @@ def convert_serial_to_string(fpath_link, linkages, all_nodes_down):
                     to_node_mod = node
                     is_valid[1] = True
             
+            # store nodes with invalid names
             if not is_valid[0] or not is_valid[1]:
                 invalid_nodes.append(tuple(row.values()))
                 continue
 
+            # create the linkages dictionary structure
             if to_node_mod not in linkages:
                 linkages[to_node_mod] = []
             linkages[to_node_mod].append(from_node_mod)
@@ -103,16 +110,24 @@ def convert_serial_to_string(fpath_link, linkages, all_nodes_down):
 
 
 def linkage_struct_adjust(linkages):
+    """ This function adjusts the linkage file for the
+    serial number method.
+    """
     for key, val in linkages.items():
+        # change the value from weighting to depth
         depth = key[1]
         temp = [(x[0], depth) for x in val]
         linkages[key] = temp
 
 
 def save_linkage(linkages, fpath_output):
-
+    """ This function saves all the linkages to .csv file when
+    serial number method is used.
+    """
     header = ['node_depth', 'from_node', 'to_node', 'weight']
     data = [header]
+
+    # create a 2d array for the csv file
     for to_node, from_nodes in linkages.items():
         tn_name, tn_depth = to_node
         for from_node in from_nodes:
@@ -120,15 +135,18 @@ def save_linkage(linkages, fpath_output):
             new_row = [tn_depth, fn_name, tn_name, weight]
             data.append(new_row)
 
+    # output the csv file
     with open(f"{fpath_output}/{FNAME_LNK}", 'w', encoding='utf-8', newline='') as csvf:
         csvwriter = csv.writer(csvf)
         csvwriter.writerows(data)
 
 
 def check_loop(next_node, current_path):
-
+    """ Algorithm for checking whether a path contains
+    any loops. Return a status that represents
+    what needs to be done for the current path.
+    """
     loop = None
-    
     if next_node not in current_path:
         status = NO_LOOP
 
@@ -165,20 +183,26 @@ def check_loop(next_node, current_path):
 
 def recursive_search_loop(invalid_paths, current_path, linkages,
                     all_nodes_down, all_nodes_up, node_queue):
+    """ Recursively searches for any loops in the a path.
+    """
     last_explored = current_path[-1]
 
+    # base case where the root node is reached
     if last_explored[1] == HOME_DEPTH:
         return
 
+    # create a list of all nodes to search for
     next_nodes = all_nodes_down[last_explored]['children'] + all_nodes_up[last_explored]['parent']
     if last_explored in linkages:
         next_nodes += linkages[last_explored]
 
     for next_node in next_nodes:
+        # check whether a loop forms
         status, loop = check_loop(next_node, current_path)
         if next_node in node_queue:
             node_queue.remove(next_node)
         
+        # decide the action for the current path that is being searched
         if status == TERMINATE:
             continue
         if status == HAS_LOOP:
@@ -189,7 +213,9 @@ def recursive_search_loop(invalid_paths, current_path, linkages,
 
 
 def get_nodes(fpath_tree, all_nodes_down, all_nodes_up):
-
+    """ gets all the parent, children node relationships based
+    on the a given tree design file
+    """
     with open(fpath_tree, 'r', encoding='utf-8') as csvf:
         id_lst = [1 for _ in range(DEPTH)]
         csvReader = csv.DictReader(csvf)
@@ -254,14 +280,19 @@ def get_str_link(fpath_link, linkages, all_nodes_down):
 
 
 def validate_linkage(linkages, all_nodes_down, all_nodes_up):
+    """ This funciton validates all the linkages by finding loops
+    and then return a list of paths that create loops.
+    """
     invalid_paths = []
     node_queue = [x for x in linkages]
 
+    # inspect all the nodes that could form loops
     while (node_queue):
         current_path = [node_queue.pop()]
         recursive_search_loop(invalid_paths, current_path, linkages,
                         all_nodes_down, all_nodes_up, node_queue)
 
+    # filter out same paths
     unique_sets = []
     invalid_paths_cleaned = []
     for loop in invalid_paths:
@@ -273,19 +304,23 @@ def validate_linkage(linkages, all_nodes_down, all_nodes_up):
 
 
 def process_linkage(method, fpath_tree, fpath_link, fpath_output):
-     
+    """ driver program for processing the node linkage files
+    """
+
     all_nodes_down = {}
     all_nodes_up = {}
     linkages = {}
     get_nodes(fpath_tree, all_nodes_down, all_nodes_up)
+
+    # if serial number is used, conversion of linkage file would be required
     if method == SERNUM:
         invalid_nodes, invalid_weight = convert_serial_to_string(fpath_link, linkages, all_nodes_down)
         save_linkage(linkages, fpath_output)
         linkage_struct_adjust(linkages)
-
     elif method == STRLNK:
         invalid_nodes, invalid_weight = get_str_link(fpath_link, linkages, all_nodes_down)
 
+    # find loops and produce a report showing all errors
     invalid_paths = validate_linkage(linkages, all_nodes_down, all_nodes_up)
     generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_output)
 
