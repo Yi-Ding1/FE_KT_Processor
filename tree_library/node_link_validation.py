@@ -21,13 +21,16 @@ N_LENGTH = 100
 
 
 def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_output):
-
+    """ outputs a .txt report that explains all the errors in the node links file
+    """
+    
     f = open(f"{fpath_output}/{FNAME_REP}", "w")
     if method == SERNUM:
         f.write("Method: conversion for serial to string." + '\n')
     elif method == STRLNK:
         f.write("Method: check validity of node names." + '\n')
     
+    # output the pairs of nodes that do not match with content in the tree design
     f.write('-'*N_LENGTH + '\n')
     if invalid_nodes:
         f.write(f"{len(invalid_nodes)} pairs of nodes were not found in the tree." + '\n')
@@ -37,6 +40,7 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
     else:
         f.write("All nodes seem to be valid." + '\n')
     
+    # output the weightings that are not within the range (0,1]
     f.write('-'*N_LENGTH + '\n')
     if invalid_weight:
         f.write(f"{len(invalid_weight)} weightings were unreasonable." + '\n')
@@ -46,6 +50,7 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
     else:
         f.write("All weightings seem to be valid." + '\n')
     
+    # output the loops found
     f.write('-'*N_LENGTH + '\n')
     if invalid_paths:
         f.write(f"{len(invalid_paths)} loops were found." + '\n')
@@ -61,9 +66,12 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
 
 
 def convert_serial_to_string(fpath_link, linkages, all_nodes_down):
-
+    """ This function produces a linkage dictionary structure based
+    on the given serial number file.
+    """
     invalid_nodes = []
     invalid_weight = []
+
     with open(fpath_link, 'r', encoding='utf-8') as csvf:
 
         csvReader = csv.DictReader(csvf)
@@ -99,6 +107,7 @@ def linkage_struct_adjust(linkages):
         depth = key[1]
         temp = [(x[0], depth) for x in val]
         linkages[key] = temp
+
 
 def save_linkage(linkages, fpath_output):
 
@@ -279,3 +288,4 @@ def process_linkage(method, fpath_tree, fpath_link, fpath_output):
 
     invalid_paths = validate_linkage(linkages, all_nodes_down, all_nodes_up)
     generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_output)
+
