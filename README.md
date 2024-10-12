@@ -16,9 +16,7 @@
     |                 |
     |                 |--| tree_validation.py       # validate the tree design
     |
-    |--| fe_logo.ico    # icon used for the executable
-    |
-    |--| main.py        # front end UI
+    |--|   main.py      # front end UI
 
 # Usage
 - Windows 64-bit system.
