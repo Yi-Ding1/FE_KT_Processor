@@ -147,6 +147,8 @@ def check_loop(next_node, current_path):
     what needs to be done for the current path.
     """
     loop = None
+
+    # case for when a new node is added to path
     if next_node not in current_path:
         status = NO_LOOP
 
@@ -160,12 +162,13 @@ def check_loop(next_node, current_path):
         lowest_depth = min(loop, key=lambda x: x[1])[1]
 
         for item in loop:
-
+            # compute how many nodes are at the lowest depths
             if item[1] != lowest_depth:
                 on_same_level = False
             else:
                 count_same_level += 1
 
+            # detect sharp turns
             if item[1] > prev_depth:
                 rise = True
             elif item[1] < prev_depth and rise:
@@ -173,6 +176,7 @@ def check_loop(next_node, current_path):
             else:
                 rise = False
         
+        # positive when the loop is formed when the lowest depth has > 1 nodes
         if on_same_level or count_same_level > 1:
             status = HAS_LOOP
         else:
@@ -220,7 +224,8 @@ def get_nodes(fpath_tree, all_nodes_down, all_nodes_up):
         id_lst = [1 for _ in range(DEPTH)]
         csvReader = csv.DictReader(csvf)
         fields = csvReader.fieldnames
-
+        
+        # create a dictionary of parent: children relationship
         for row in csvReader:
             for i in range(DEPTH):
                 from_node = (row[fields[i]], i+1)
@@ -229,6 +234,7 @@ def get_nodes(fpath_tree, all_nodes_down, all_nodes_up):
                 else:
                     to_node = None
 
+                # initialize nodes to have id
                 if from_node not in all_nodes_down:
                     all_nodes_down[from_node] = {}
                     from_node_id = f"{i+1}.{id_lst[i]}"
@@ -236,9 +242,11 @@ def get_nodes(fpath_tree, all_nodes_down, all_nodes_up):
                     all_nodes_down[from_node]['children'] = []
                     id_lst[i] += 1
 
+                # allocate child node
                 if to_node and to_node not in all_nodes_down[from_node]['children']:
                     all_nodes_down[from_node]['children'].append(to_node)
 
+        # reverse the all nodes down to create a dictionary of child: parent relationship
         for node, val in all_nodes_down.items():
             for child in val['children']:
                 all_nodes_up[child] = {
@@ -248,6 +256,10 @@ def get_nodes(fpath_tree, all_nodes_down, all_nodes_up):
 
 
 def get_str_link(fpath_link, linkages, all_nodes_down):
+    """ This function extracts the linkages from the given
+    written string linkage file and then return the pairs
+    of nodes with invalid names or weightings.
+    """
     with open(fpath_link, 'r', encoding='utf-8') as csvf:
 
         invalid_nodes = []
@@ -255,25 +267,28 @@ def get_str_link(fpath_link, linkages, all_nodes_down):
         csvReader = csv.DictReader(csvf)
 
         for row in csvReader:
-            
             depth, from_node, to_node, weight = row.values()
             is_valid = True
+
+            # range check for weighting
             if float(weight) <= 0 or float(weight) > 1:
                 invalid_weight.append(tuple(row.values()))
                 is_valid = False
 
+            # existence check for node names
             from_node_mod = (from_node, int(depth))
             to_node_mod = (to_node, int(depth))
             if from_node_mod not in all_nodes_down or to_node_mod not in all_nodes_down:
                 invalid_nodes.append(tuple(row.values()))
                 is_valid = False
             
+            # skip the linkage construction if validity is false
             if not is_valid:
                 continue
-
+            
+            # store the new linkages
             if to_node_mod not in linkages:
                 linkages[to_node_mod] = []
-            
             linkages[to_node_mod].append(from_node_mod)
     
     return invalid_nodes, invalid_weight
