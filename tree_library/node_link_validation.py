@@ -16,7 +16,7 @@ NO_LOOP = 0
 SERNUM = "Option 1"
 STRLNK = "Option 2"
 FNAME_REP = "node_validation_report.txt"
-FNAME_LNK = "converted_to_str.csv"
+FNAME_LNK = "converted_to_string.csv"
 N_LENGTH = 100
 
 
@@ -26,8 +26,10 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
     
     f = open(f"{fpath_output}/{FNAME_REP}", "w")
     if method == SERNUM:
+        start_idx = 0
         f.write("Method: conversion for serial to string." + '\n')
     elif method == STRLNK:
+        start_idx = 1
         f.write("Method: check validity of node names." + '\n')
     
     # output the pairs of nodes that do not match with content in the tree design
@@ -36,7 +38,7 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
         f.write(f"{len(invalid_nodes)} pairs of nodes were not found in the tree." + '\n')
         f.write("from_node   to_node     weight" + '\n')
         for node in invalid_nodes:
-            f.write("{:<11s} {:<11s} {}".format(node[0], node[1], node[2]) + '\n')
+            f.write("{:<11s} {:<11s} {}".format(node[start_idx], node[start_idx+1], node[start_idx+2]) + '\n')
     else:
         f.write("All nodes seem to be valid." + '\n')
     
@@ -46,7 +48,7 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
         f.write(f"{len(invalid_weight)} weightings were unreasonable." + '\n')
         f.write("from_node   to_node     weight" + '\n')
         for node in invalid_weight:
-            f.write("{:<11s} {:<11s} {}".format(node[0], node[1], node[2]) + '\n ')
+            f.write("{:<11s} {:<11s} {}".format(node[start_idx], node[start_idx+1], node[start_idx+2]) + '\n ')
     else:
         f.write("All weightings seem to be valid." + '\n')
     

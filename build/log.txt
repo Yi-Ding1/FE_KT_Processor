@@ -1,0 +1,8 @@
+Version 2.0.0
+- Added the node linkage validation function
+- Added comments to increase readability
+
+Version 2.0.1
+- Fixed the error with incorrect display of node linkage report for written string method,
+in specific the index of the item being printed is not handled properly.
+

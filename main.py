@@ -2,7 +2,6 @@
 Where it all begins... This program generates the front-end UI
 Author: Yi Ding
 Version: 1.1
-Log: Added comments for readability.
 """
 
 import tkinter as tk
@@ -154,7 +153,7 @@ link_data_path.grid(row=3, column=1, padx=PADX, pady=PADY)
 open_link_data_button.grid(row=3, column=3, padx=PADX, pady=PADY)
 
 process_button.grid(row=5, columnspan=4, pady=PADY)
-tk.Label(root, text="Version: 2.0", bg='#f0f8ff').grid(row=5, column=3, padx=PADX, pady=PADY, sticky="e")
+tk.Label(root, text="Version: 2.0.1", bg='#f0f8ff').grid(row=5, column=3, padx=PADX, pady=PADY, sticky="e")
 
 # Start the main event loop
 root.mainloop()
