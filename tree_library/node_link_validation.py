@@ -48,7 +48,7 @@ def generate_report(method, invalid_nodes, invalid_weight, invalid_paths, fpath_
         f.write(f"{len(invalid_weight)} weightings were unreasonable." + '\n')
         f.write("from_node   to_node     weight" + '\n')
         for node in invalid_weight:
-            f.write("{:<11s} {:<11s} {}".format(node[start_idx], node[start_idx+1], node[start_idx+2]) + '\n ')
+            f.write("{:<11s} {:<11s} {}".format(node[start_idx], node[start_idx+1], node[start_idx+2]) + '\n')
     else:
         f.write("All weightings seem to be valid." + '\n')
     
